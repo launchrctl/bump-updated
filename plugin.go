@@ -45,7 +45,7 @@ func (p *Plugin) DiscoverActions(_ context.Context) ([]*action.Action, error) {
 		doSync := input.Opt("sync").(bool)
 		dryRun := input.Opt("dry-run").(bool)
 		allowOverride := input.Opt("allow-override").(bool)
-		filterByResourceUsage := input.Opt("playbook-resources").(bool)
+		filterByResourceUsage := input.Opt("playbook-filter").(bool)
 		timeDepth := input.Opt("time-depth").(string)
 		vaultpass := input.Opt("vault-pass").(string)
 		last := input.Opt("last").(bool)
