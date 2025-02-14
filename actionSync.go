@@ -411,7 +411,7 @@ func (s *SyncAction) buildPropagationMap(buildInv *sync.Inventory, timeline []sy
 
 					processed[dep] = true
 
-					if !sync.IsUpdatableKind(r.GetKind()) {
+					if !sync.IsUpdatableKind(depResource.GetKind()) {
 						launchr.Log().Warn(fmt.Sprintf("%s is not allowed to propagate", dep))
 						continue
 					}
@@ -509,7 +509,7 @@ func (s *SyncAction) buildPropagationMap(buildInv *sync.Inventory, timeline []sy
 
 					processed[dep] = true
 
-					if !sync.IsUpdatableKind(mainResource.GetKind()) {
+					if !sync.IsUpdatableKind(depResource.GetKind()) {
 						launchr.Log().Warn(fmt.Sprintf("%s is not allowed to propagate", dep))
 						continue
 					}

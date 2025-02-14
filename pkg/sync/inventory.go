@@ -43,13 +43,6 @@ var Kinds = map[string]struct{}{
 	"entities":     {},
 }
 
-type resourceDependencies struct {
-	Name        string `yaml:"name"`
-	IncludeRole struct {
-		Name string `yaml:"name"`
-	} `yaml:"include_role"`
-}
-
 // Inventory represents the inventory used in the application to search and collect resources and variable resources.
 type Inventory struct {
 	// services
@@ -122,79 +115,26 @@ func (i *Inventory) buildResourcesGraph() error {
 		entity := strings.ToLower(filepath.Base(relPath))
 		dir := filepath.Dir(relPath)
 
-		switch entity {
-		case "plasma.yaml":
+		isMetaDir := strings.HasSuffix(dir, "/meta")
+		isTasksDir := strings.HasSuffix(dir, "/tasks")
+
+		if isMetaDir && entity == "plasma.yaml" {
 			resource := BuildResourceFromPath(relPath, i.sourceDir)
-			if resource == nil {
-				break
-			}
-			if !resource.IsValidResource() {
-				break
+			if resource == nil || !resource.IsValidResource() {
+				return nil
 			}
 
 			resourceName := resource.GetName()
 			i.resourcesMap.Set(resourceName, resource)
-		case "dependencies.yaml":
-			resource := BuildResourceFromPath(relPath, i.sourceDir)
-			if resource == nil {
-				break
-			}
-			if !resource.IsValidResource() {
-				break
-			}
-
-			resourceName := resource.GetName()
-			if _, ok := i.resourcesMap.Get(resourceName); !ok {
-				i.resourcesMap.Set(resourceName, resource)
-			}
-
-			if !strings.HasSuffix(dir, "/tasks") {
-				break
-			}
-
-			data, errRead := os.ReadFile(filepath.Clean(path))
-			if errRead != nil {
-				return errRead
-			}
-
-			var deps []resourceDependencies
-			err = yaml.Unmarshal(data, &deps)
-			if err != nil {
-				return err
-			}
-
-			if len(deps) == 0 {
-				return nil
-			}
-
-			if i.dependsOn[resourceName] == nil {
-				i.dependsOn[resourceName] = NewOrderedMap[bool]()
-			}
-
-			for _, dep := range deps {
-				if dep.IncludeRole.Name != "" {
-					depName := strings.ReplaceAll(dep.IncludeRole.Name, ".", "__")
-					if i.requiredBy[depName] == nil {
-						i.requiredBy[depName] = NewOrderedMap[bool]()
-					}
-
-					i.requiredBy[depName].Set(resourceName, true)
-					i.dependsOn[resourceName].Set(depName, true)
-				}
-			}
-		case "main.yaml":
+		} else if isTasksDir {
 			resource := BuildResourceFromPath(relPath, i.sourceDir)
 			if resource == nil || !resource.IsValidResource() {
-				break
+				return nil
 			}
 
 			resourceName := resource.GetName()
 			if _, exists := i.resourcesMap.Get(resourceName); !exists {
 				i.resourcesMap.Set(resourceName, resource)
-			}
-
-			if !strings.HasSuffix(dir, "/tasks") {
-				break
 			}
 
 			data, errRead := os.ReadFile(filepath.Clean(path))
